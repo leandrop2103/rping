@@ -2,6 +2,7 @@
 
 pub mod style;
 
+use crate::cli::TimestampMode;
 use crate::stats::StatsSummary;
 use std::io::{self, Write};
 use std::net::IpAddr;
@@ -13,16 +14,18 @@ pub struct Printer {
     style: Style,
     quiet: bool,
     audible: bool,
+    timestamp_mode: TimestampMode,
 }
 
 impl Printer {
     /// Cria uma nova instância do formatador de saída.
     #[must_use]
-    pub fn new(no_color: bool, quiet: bool, audible: bool) -> Self {
+    pub fn new(no_color: bool, quiet: bool, audible: bool, timestamp_mode: TimestampMode) -> Self {
         Self {
             style: Style::new(no_color),
             quiet,
             audible,
+            timestamp_mode,
         }
     }
 
@@ -59,6 +62,14 @@ impl Printer {
         out.flush()
     }
 
+    fn timestamp_prefix(&self) -> String {
+        match self.timestamp_mode {
+            TimestampMode::None => String::new(),
+            TimestampMode::Unix => self.style.color_timestamp(&current_unix_timestamp()),
+            TimestampMode::Human => self.style.color_timestamp(&current_human_timestamp()),
+        }
+    }
+
     /// Imprime uma resposta de eco bem-sucedida.
     ///
     /// # Errors
@@ -83,11 +94,12 @@ impl Printer {
         let colored_seq = self.style.color_seq(seq);
         let colored_ttl = self.style.color_ttl(ttl);
         let colored_rtt = self.style.color_rtt(rtt_ms);
+        let ts_prefix = self.timestamp_prefix();
 
         let mut out = io::stdout().lock();
         writeln!(
             out,
-            "{colored_bytes} de {colored_ip}: {colored_seq} {colored_ttl} tempo={colored_rtt}"
+            "{ts_prefix}{colored_bytes} de {colored_ip}: {colored_seq} {colored_ttl} tempo={colored_rtt}"
         )?;
         out.flush()
     }
@@ -101,9 +113,10 @@ impl Printer {
             return Ok(());
         }
 
+        let ts_prefix = self.timestamp_prefix();
         let msg = format!("Tempo limite esgotado para icmp_seq {seq}");
         let mut out = io::stdout().lock();
-        writeln!(out, "{}", self.style.bold_red(&msg))?;
+        writeln!(out, "{ts_prefix}{}", self.style.bold_red(&msg))?;
         out.flush()
     }
 
@@ -121,13 +134,14 @@ impl Printer {
             return Ok(());
         }
 
+        let ts_prefix = self.timestamp_prefix();
         let prefix = from.map_or_else(
             || format!("icmp_seq={seq}: {message}"),
             |ip| format!("De {ip} icmp_seq={seq}: {message}"),
         );
 
         let mut out = io::stdout().lock();
-        writeln!(out, "{}", self.style.bold_yellow(&prefix))?;
+        writeln!(out, "{ts_prefix}{}", self.style.bold_yellow(&prefix))?;
         out.flush()
     }
 
@@ -165,5 +179,93 @@ impl Printer {
         }
 
         out.flush()
+    }
+}
+
+#[cfg(windows)]
+fn current_human_timestamp() -> String {
+    #[repr(C)]
+    struct Win32SystemTime {
+        year: u16,
+        month: u16,
+        day_of_week: u16,
+        day: u16,
+        hour: u16,
+        minute: u16,
+        second: u16,
+        milliseconds: u16,
+    }
+
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn GetLocalTime(lpSystemTime: *mut Win32SystemTime);
+    }
+
+    let mut st = std::mem::MaybeUninit::<Win32SystemTime>::uninit();
+    unsafe {
+        GetLocalTime(st.as_mut_ptr());
+        let st = st.assume_init();
+        format!(
+            "{:02}/{:02}-{:02}:{:02}:{:02}",
+            st.day, st.month, st.hour, st.minute, st.second
+        )
+    }
+}
+
+#[cfg(not(windows))]
+fn current_human_timestamp() -> String {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default();
+    let total_secs = now.as_secs();
+    let s = total_secs % 60;
+    let m = (total_secs / 60) % 60;
+    let h = (total_secs / 3600) % 24;
+    format!("00/00-{h:02}:{m:02}:{s:02}")
+}
+
+fn current_unix_timestamp() -> String {
+    let now = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap_or_default();
+    format!("{}.{:06}", now.as_secs(), now.subsec_micros())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_current_unix_timestamp_format() {
+        let ts = current_unix_timestamp();
+        assert!(ts.contains('.'));
+        let parts: Vec<&str> = ts.split('.').collect();
+        assert_eq!(parts.len(), 2);
+        assert_eq!(parts[1].len(), 6);
+    }
+
+    #[test]
+    fn test_current_human_timestamp_format() {
+        let ts = current_human_timestamp();
+        // dd/mm-hh:mm:ss -> length 14, contains '/' and '-' and ':'
+        assert_eq!(ts.len(), 14);
+        assert_eq!(&ts[2..3], "/");
+        assert_eq!(&ts[5..6], "-");
+        assert_eq!(&ts[8..9], ":");
+        assert_eq!(&ts[11..12], ":");
+    }
+
+    #[test]
+    fn test_timestamp_prefix_disabled() {
+        let printer = Printer::new(false, false, false, TimestampMode::None);
+        assert_eq!(printer.timestamp_prefix(), "");
+    }
+
+    #[test]
+    fn test_timestamp_prefix_human() {
+        let printer = Printer::new(true, false, false, TimestampMode::Human);
+        let prefix = printer.timestamp_prefix();
+        assert!(prefix.starts_with('['));
+        assert!(prefix.ends_with("] "));
     }
 }

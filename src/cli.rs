@@ -35,8 +35,16 @@ pub struct Cli {
     pub size: usize,
 
     /// Tempo de vida (TTL) do pacote IP em saltos (1-255)
-    #[arg(short = 't', long = "ttl", default_value_t = 64, value_name = "TTL")]
+    #[arg(short = 'T', long = "ttl", default_value_t = 64, value_name = "TTL")]
     pub ttl: u8,
+
+    /// Exibe carimbo de data/hora UNIX epoch em cada resposta
+    #[arg(short = 't', long = "timestamp")]
+    pub timestamp: bool,
+
+    /// Exibe carimbo de data/hora em formato humano (dd/mm-hh:mm:ss) em cada resposta
+    #[arg(long = "th", alias = "timestamp-human")]
+    pub timestamp_human: bool,
 
     /// Tempo limite de espera por resposta em segundos
     #[arg(
@@ -74,4 +82,75 @@ pub struct Cli {
     /// Desativa a saída colorida no terminal
     #[arg(long = "no-color")]
     pub no_color: bool,
+}
+
+/// Modo de exibição de carimbo de data/hora (timestamp).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum TimestampMode {
+    /// Sem carimbo de data/hora.
+    #[default]
+    None,
+    /// Timestamp numérico Unix Epoch com microssegundos (`[1728834921.123456]`).
+    Unix,
+    /// Timestamp legível em formato humano `dd/mm-hh:mm:ss` (`[13/10-14:08:17]`).
+    Human,
+}
+
+impl Cli {
+    /// Determina o modo de timestamp configurado nos argumentos.
+    #[must_use]
+    pub const fn timestamp_mode(&self) -> TimestampMode {
+        if self.timestamp_human {
+            TimestampMode::Human
+        } else if self.timestamp {
+            TimestampMode::Unix
+        } else {
+            TimestampMode::None
+        }
+    }
+
+    /// Analisa uma sequência arbitrária de argumentos, normalizando `-th` para `--th`.
+    #[must_use]
+    pub fn parse_from_args<I, T>(args: I) -> Self
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<std::ffi::OsString> + Clone,
+    {
+        let normalized = args.into_iter().map(|item| {
+            let s: std::ffi::OsString = item.into();
+            if s == "-th" {
+                std::ffi::OsString::from("--th")
+            } else {
+                s
+            }
+        });
+        Self::parse_from(normalized)
+    }
+
+    /// Analisa os argumentos da linha de comando, normalizando atalhos como `-th` para `--th`.
+    #[must_use]
+    pub fn parse_args() -> Self {
+        Self::parse_from_args(std::env::args_os())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_timestamp_flags() {
+        let cli = Cli::parse_from_args(["rping", "-t", "1.1.1.1"]);
+        assert!(cli.timestamp);
+        assert!(!cli.timestamp_human);
+        assert_eq!(cli.timestamp_mode(), TimestampMode::Unix);
+
+        let cli_th = Cli::parse_from_args(["rping", "-th", "1.1.1.1"]);
+        assert!(cli_th.timestamp_human);
+        assert_eq!(cli_th.timestamp_mode(), TimestampMode::Human);
+
+        let cli_long_th = Cli::parse_from_args(["rping", "--th", "1.1.1.1"]);
+        assert!(cli_long_th.timestamp_human);
+        assert_eq!(cli_long_th.timestamp_mode(), TimestampMode::Human);
+    }
 }

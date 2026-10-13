@@ -147,6 +147,16 @@ impl Style {
         }
     }
 
+    /// Formata um carimbo de data/hora com cor esmaecida (cinza escuro / dim).
+    #[must_use]
+    pub fn color_timestamp(&self, ts: &str) -> String {
+        if self.enabled {
+            format!("\x1b[90m[{ts}]\x1b[0m ")
+        } else {
+            format!("[{ts}] ")
+        }
+    }
+
     /// Formata a contagem de pacotes transmitidos com destaque (ciano brilhante).
     #[must_use]
     pub fn color_transmitted(&self, count: u64) -> String {

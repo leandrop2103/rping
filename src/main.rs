@@ -2,13 +2,12 @@
 
 #![warn(clippy::all, clippy::pedantic, clippy::nursery)]
 
-use clap::Parser;
 use tracing::Level;
 use tracing_subscriber::FmtSubscriber;
 
-#[tokio::main]
+#[tokio::main(flavor = "current_thread")]
 async fn main() {
-    let cli = rping::Cli::parse();
+    let cli = rping::Cli::parse_args();
 
     let log_level = if cli.verbose {
         Level::DEBUG

@@ -13,7 +13,7 @@ pub mod error;
 pub mod stats;
 
 pub use app::run;
-pub use cli::Cli;
+pub use cli::{Cli, TimestampMode};
 pub use error::{PingError, Result};
 pub use stats::PingStatistics;
 

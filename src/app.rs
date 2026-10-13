@@ -78,7 +78,7 @@ pub async fn run(cli: Cli) -> Result<()> {
     let resolved_ip = resolve_target(&cli.destination, cli.ipv4, cli.ipv6)?;
     info!(target = %cli.destination, ip = %resolved_ip, "Target resolved");
 
-    let printer = Printer::new(cli.no_color, cli.quiet, cli.audible);
+    let printer = Printer::new(cli.no_color, cli.quiet, cli.audible, cli.timestamp_mode());
     let mut stats = PingStatistics::new(&cli.destination);
     let mut engine = create_engine(resolved_ip)?;
 
