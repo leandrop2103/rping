@@ -29,8 +29,14 @@ Projetado especificamente para rodar nativamente e com máxima performance no **
 - **Asynchronous & Responsive**:
   - Orquestração não-bloqueante com `tokio` (interval pacing, resolução DNS e sinal Ctrl+C limpo que sempre imprime o resumo antes de sair).
 - **Otimização Extrema de Binário**:
-  - Release com `opt-level = 3`, `lto = "fat"`, `codegen-units = 1`, `panic = "abort"`, `strip = true` e runtime estático (`target-feature=+crt-static`).
-  - Binário final autônomo com menos de **900 KB**.
+  - Release com `opt-level = "z"`, `lto = "fat"`, `codegen-units = 1`, `panic = "abort"`, `strip = true` e runtime estático (`target-feature=+crt-static`).
+  - Binário final autônomo com apenas **~590 KB** e zero dependências externas.
+- **Carimbos de Data/Hora (Timestamps)**:
+  - `-t`: Exibe timestamp Unix epoch com precisão de microssegundos.
+  - `-th`: Exibe timestamp local para humanos no formato `dd/mm-hh:mm:ss`.
+- **Compatibilidade Híbrida Windows / Linux**:
+  - Aceita tanto `-c` (Linux) quanto `-n` (Windows) para contagem de pacotes.
+  - Aceita tanto `-s` (Linux) quanto `-l` (Windows) para tamanho do payload.
 
 ---
 
@@ -66,10 +72,12 @@ Argumentos:
   <DESTINO>                  Nome de host ou endereço IP de destino para pingar (ex: google.com, 1.1.1.1, ::1)
 
 Opções:
-  -c, --count <CONTAGEM>     Número de pacotes ECHO_REQUEST a enviar
+  -c, -n, --count <CONTAGEM> Número de pacotes ECHO_REQUEST a enviar
   -i, --interval <SEGUNDOS>  Intervalo de espera em segundos entre o envio de cada pacote [padrão: 1.0]
-  -s, --size <BYTES>         Número de bytes de dados da carga útil (payload) a enviar [padrão: 56]
-  -t, --ttl <TTL>            Tempo de vida (TTL) do pacote IP em saltos (1-255) [padrão: 64]
+  -s, -l, --size <BYTES>     Número de bytes de dados da carga útil (payload) a enviar [padrão: 56]
+  -T, --ttl <TTL>            Tempo de vida (TTL) do pacote IP em saltos (1-255) [padrão: 64]
+  -t, --timestamp            Exibe carimbo de data/hora UNIX epoch em cada resposta
+      -th, --th              Exibe carimbo de data/hora em formato humano (dd/mm-hh:mm:ss)
   -W, --timeout <SEGUNDOS>   Tempo limite de espera por resposta em segundos [padrão: 1.0]
   -w, --deadline <SEGUNDOS>  Encerra após o tempo limite (deadline) em segundos, independentemente da contagem
   -4, --ipv4                 Força resolução de nomes para IPv4
@@ -85,20 +93,17 @@ Opções:
 ### Exemplos Práticos
 
 ```powershell
-# Executar a partir da raiz (4 pacotes)
-.\rping.exe -c 4 google.com
+# Executar a partir da raiz com timestamp humano (dd/mm-hh:mm:ss)
+.\rping.exe -th -c 4 1.1.1.1
 
-# Ou usando o alias ping.exe na raiz
-.\ping.exe -c 4 127.0.0.1
+# Usando atalhos clássicos do Windows (-n para count, -l para bytes)
+.\ping.exe -n 4 -l 64 8.8.8.8
 
-# Ping rápido a cada 200ms com timeout curto
-.\rping.exe -c 10 -i 0.2 -W 0.5 1.1.1.1
+# Ping com timestamp unix epoch
+.\rping.exe -t -c 4 1.1.1.1
 
 # Ping contínuo (Ctrl+C encerra e mostra estatísticas)
-.\rping.exe 8.8.8.8
-
-# Forçar resolução IPv6
-.\rping.exe -6 google.com
+.\rping.exe google.com
 ```
 
 ---
