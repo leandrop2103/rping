@@ -89,6 +89,64 @@ impl Style {
         }
     }
 
+    /// Wraps text in normal cyan.
+    #[must_use]
+    pub fn cyan(&self, text: &str) -> String {
+        self.format("\x1b[36m", text)
+    }
+
+    /// Formata a quantidade de bytes com destaque (ciano brilhante).
+    #[must_use]
+    pub fn color_bytes(&self, bytes: usize) -> String {
+        if self.enabled {
+            format!("\x1b[1;36m{bytes} bytes\x1b[0m")
+        } else {
+            format!("{bytes} bytes")
+        }
+    }
+
+    /// Formata o host ou endereço IP de origem (magenta brilhante).
+    #[must_use]
+    pub fn color_host(&self, host: &str) -> String {
+        if self.enabled {
+            format!("\x1b[1;35m{host}\x1b[0m")
+        } else {
+            host.to_string()
+        }
+    }
+
+    /// Formata o campo de sequência ICMP (azul).
+    #[must_use]
+    pub fn color_seq(&self, seq: u16) -> String {
+        if self.enabled {
+            format!("\x1b[34micmp_seq=\x1b[1;34m{seq}\x1b[0m")
+        } else {
+            format!("icmp_seq={seq}")
+        }
+    }
+
+    /// Formata o campo Time To Live (TTL) (amarelo).
+    #[must_use]
+    pub fn color_ttl(&self, ttl: u8) -> String {
+        if self.enabled {
+            format!("\x1b[33mttl=\x1b[1;33m{ttl}\x1b[0m")
+        } else {
+            format!("ttl={ttl}")
+        }
+    }
+
+    /// Formata os valores de RTT nas estatísticas com números destacados em ciano.
+    #[must_use]
+    pub fn color_rtt_stats(&self, min: f64, avg: f64, max: f64, mdev: f64) -> String {
+        if self.enabled {
+            format!(
+                "rtt mín/méd/máx/mdev = \x1b[1;36m{min:.3}\x1b[0m/\x1b[1;36m{avg:.3}\x1b[0m/\x1b[1;36m{max:.3}\x1b[0m/\x1b[1;36m{mdev:.3}\x1b[0m ms"
+            )
+        } else {
+            format!("rtt mín/méd/máx/mdev = {min:.3}/{avg:.3}/{max:.3}/{mdev:.3} ms")
+        }
+    }
+
     /// Applies color to a packet loss percentage:
     /// - Green: 0%
     /// - Yellow: 0.1% .. 20%

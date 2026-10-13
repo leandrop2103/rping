@@ -18,7 +18,7 @@ if ($Debug) {
 
 Write-Host "[2/2] Copiando binários para a raiz do projeto..." -ForegroundColor Cyan
 Copy-Item (Join-Path $binDir "rping.exe") (Join-Path $root "rping.exe") -Force
-Copy-Item (Join-Path $binDir "ping.exe") (Join-Path $root "ping.exe") -Force
+Copy-Item (Join-Path $binDir "rping.exe") (Join-Path $root "ping.exe") -Force
 
 Write-Host "Sucesso! Binários salvos na raiz:" -ForegroundColor Green
 Get-Item (Join-Path $root "rping.exe"), (Join-Path $root "ping.exe") | Select-Object Name, Length, LastWriteTime

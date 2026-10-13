@@ -47,10 +47,14 @@ impl Printer {
         let total_bytes = payload_bytes + 28; // 20 bytes IP + 8 bytes ICMP
         let mut out = io::stdout().lock();
 
-        let header = format!(
-            "PING {target_name} ({resolved_ip}) {payload_bytes}({total_bytes}) bytes de dados."
-        );
-        writeln!(out, "{}", self.style.bold_cyan(&header))?;
+        let ping_label = self.style.bold_cyan("PING");
+        let target_str = self.style.color_host(target_name);
+        let ip_str = self.style.cyan(&format!("({resolved_ip})"));
+        let bytes_str = self.style.bold_cyan(&payload_bytes.to_string());
+        let total_str = self.style.dim(&format!("({total_bytes})"));
+
+        let header = format!("{ping_label} {target_str} {ip_str} {bytes_str}{total_str} bytes de dados.");
+        writeln!(out, "{header}")?;
         out.flush()
     }
 
@@ -73,12 +77,16 @@ impl Printer {
         self.ring_bell();
 
         let rtt_ms = rtt.as_secs_f64() * 1000.0;
+        let colored_bytes = self.style.color_bytes(bytes);
+        let colored_ip = self.style.color_host(&from_ip.to_string());
+        let colored_seq = self.style.color_seq(seq);
+        let colored_ttl = self.style.color_ttl(ttl);
         let colored_rtt = self.style.color_rtt(rtt_ms);
 
         let mut out = io::stdout().lock();
         writeln!(
             out,
-            "{bytes} bytes de {from_ip}: icmp_seq={seq} ttl={ttl} tempo={colored_rtt}"
+            "{colored_bytes} de {colored_ip}: {colored_seq} {colored_ttl} tempo={colored_rtt}"
         )?;
         out.flush()
     }
@@ -129,7 +137,8 @@ impl Printer {
     pub fn print_summary(&self, summary: &StatsSummary) -> io::Result<()> {
         let mut out = io::stdout().lock();
 
-        let header = format!("--- estatísticas de ping para {} ---", summary.target);
+        let target_str = self.style.color_host(&summary.target);
+        let header = format!("--- estatísticas de ping para {target_str} ---");
         writeln!(out, "\n{}", self.style.bold_cyan(&header))?;
 
         let total_ms = summary.total_duration.as_millis();
@@ -147,9 +156,8 @@ impl Printer {
             summary.rtt_max,
             summary.rtt_mdev,
         ) {
-            let stats_line =
-                format!("rtt mín/méd/máx/mdev = {min:.3}/{avg:.3}/{max:.3}/{mdev:.3} ms");
-            writeln!(out, "{}", self.style.bold(&stats_line))?;
+            let stats_line = self.style.color_rtt_stats(min, avg, max, mdev);
+            writeln!(out, "{stats_line}")?;
         }
 
         out.flush()
