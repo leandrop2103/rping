@@ -1,4 +1,4 @@
-//! Terminal output and presentation formatting for ping.
+//! Saída no terminal e formatação de apresentação para o ping.
 
 pub mod style;
 
@@ -8,7 +8,7 @@ use std::net::IpAddr;
 use std::time::Duration;
 use style::Style;
 
-/// Terminal printer for ping events with styling support.
+/// Formatador de saída no terminal para eventos de ping com suporte a estilos ANSI.
 pub struct Printer {
     style: Style,
     quiet: bool,
@@ -16,7 +16,7 @@ pub struct Printer {
 }
 
 impl Printer {
-    /// Creates a new output printer.
+    /// Cria uma nova instância do formatador de saída.
     #[must_use]
     pub fn new(no_color: bool, quiet: bool, audible: bool) -> Self {
         Self {
@@ -26,7 +26,7 @@ impl Printer {
         }
     }
 
-    /// Emits audible bell tone if enabled.
+    /// Emite sinal sonoro (beep/bell) se a opção estiver habilitada.
     pub fn ring_bell(&self) {
         if self.audible {
             print!("\x07");
@@ -34,30 +34,30 @@ impl Printer {
         }
     }
 
-    /// Prints the initial ping header.
+    /// Imprime o cabeçalho inicial da sessão de ping.
     ///
     /// # Errors
-    /// Returns `io::Error` if stdout writing fails.
+    /// Retorna `io::Error` se a escrita na saída padrão falhar.
     pub fn print_header(
         &self,
         target_name: &str,
         resolved_ip: IpAddr,
         payload_bytes: usize,
     ) -> io::Result<()> {
-        let total_bytes = payload_bytes + 28; // 20 IP + 8 ICMP
+        let total_bytes = payload_bytes + 28; // 20 bytes IP + 8 bytes ICMP
         let mut out = io::stdout().lock();
 
         let header = format!(
-            "PING {target_name} ({resolved_ip}) {payload_bytes}({total_bytes}) bytes of data."
+            "PING {target_name} ({resolved_ip}) {payload_bytes}({total_bytes}) bytes de dados."
         );
         writeln!(out, "{}", self.style.bold_cyan(&header))?;
         out.flush()
     }
 
-    /// Prints a successful echo reply.
+    /// Imprime uma resposta de eco bem-sucedida.
     ///
     /// # Errors
-    /// Returns `io::Error` if stdout writing fails.
+    /// Retorna `io::Error` se a escrita na saída padrão falhar.
     pub fn print_reply(
         &self,
         bytes: usize,
@@ -78,30 +78,30 @@ impl Printer {
         let mut out = io::stdout().lock();
         writeln!(
             out,
-            "{bytes} bytes from {from_ip}: icmp_seq={seq} ttl={ttl} time={colored_rtt}"
+            "{bytes} bytes de {from_ip}: icmp_seq={seq} ttl={ttl} tempo={colored_rtt}"
         )?;
         out.flush()
     }
 
-    /// Prints a request timeout notification.
+    /// Imprime uma notificação de tempo limite esgotado.
     ///
     /// # Errors
-    /// Returns `io::Error` if stdout writing fails.
+    /// Retorna `io::Error` se a escrita na saída padrão falhar.
     pub fn print_timeout(&self, seq: u16) -> io::Result<()> {
         if self.quiet {
             return Ok(());
         }
 
-        let msg = format!("Request timeout for icmp_seq {seq}");
+        let msg = format!("Tempo limite esgotado para icmp_seq {seq}");
         let mut out = io::stdout().lock();
         writeln!(out, "{}", self.style.bold_red(&msg))?;
         out.flush()
     }
 
-    /// Prints an ICMP error message (e.g. TTL expired, Destination unreachable).
+    /// Imprime uma mensagem de erro ICMP (ex: TTL expirado, destino inalcançável).
     ///
     /// # Errors
-    /// Returns `io::Error` if stdout writing fails.
+    /// Retorna `io::Error` se a escrita na saída padrão falhar.
     pub fn print_error_reply(
         &self,
         from: Option<IpAddr>,
@@ -114,7 +114,7 @@ impl Printer {
 
         let prefix = from.map_or_else(
             || format!("icmp_seq={seq}: {message}"),
-            |ip| format!("From {ip} icmp_seq={seq}: {message}"),
+            |ip| format!("De {ip} icmp_seq={seq}: {message}"),
         );
 
         let mut out = io::stdout().lock();
@@ -122,14 +122,14 @@ impl Printer {
         out.flush()
     }
 
-    /// Prints the final summary statistics block.
+    /// Imprime o bloco de resumo com estatísticas finais acumuladas.
     ///
     /// # Errors
-    /// Returns `io::Error` if stdout writing fails.
+    /// Retorna `io::Error` se a escrita na saída padrão falhar.
     pub fn print_summary(&self, summary: &StatsSummary) -> io::Result<()> {
         let mut out = io::stdout().lock();
 
-        let header = format!("--- {} ping statistics ---", summary.target);
+        let header = format!("--- estatísticas de ping para {} ---", summary.target);
         writeln!(out, "\n{}", self.style.bold_cyan(&header))?;
 
         let total_ms = summary.total_duration.as_millis();
@@ -137,7 +137,7 @@ impl Printer {
 
         writeln!(
             out,
-            "{} packets transmitted, {} received, {} packet loss, time {}ms",
+            "{} pacotes transmitidos, {} recebidos, {} de perda de pacotes, tempo total {}ms",
             summary.transmitted, summary.received, loss_colored, total_ms
         )?;
 
@@ -148,7 +148,7 @@ impl Printer {
             summary.rtt_mdev,
         ) {
             let stats_line =
-                format!("rtt min/avg/max/mdev = {min:.3}/{avg:.3}/{max:.3}/{mdev:.3} ms");
+                format!("rtt mín/méd/máx/mdev = {min:.3}/{avg:.3}/{max:.3}/{mdev:.3} ms");
             writeln!(out, "{}", self.style.bold(&stats_line))?;
         }
 

@@ -160,19 +160,19 @@ impl WindowsPingEngine {
             IP_REQ_TIMED_OUT => EchoStatus::Timeout,
             IP_TTL_EXPIRED_TRANSIT | IP_TTL_EXPIRED_REASSEM => EchoStatus::TtlExpired,
             IP_DEST_NET_UNREACHABLE => {
-                EchoStatus::DestinationUnreachable("Destination network unreachable".into())
+                EchoStatus::DestinationUnreachable("Rede de destino inalcançável".into())
             }
             IP_DEST_HOST_UNREACHABLE => {
-                EchoStatus::DestinationUnreachable("Destination host unreachable".into())
+                EchoStatus::DestinationUnreachable("Host de destino inalcançável".into())
             }
             IP_DEST_PROT_UNREACHABLE => {
-                EchoStatus::DestinationUnreachable("Destination protocol unreachable".into())
+                EchoStatus::DestinationUnreachable("Protocolo de destino inalcançável".into())
             }
             IP_DEST_PORT_UNREACHABLE => {
-                EchoStatus::DestinationUnreachable("Destination port unreachable".into())
+                EchoStatus::DestinationUnreachable("Porta de destino inalcançável".into())
             }
-            IP_GENERAL_FAILURE => EchoStatus::Other("General failure".into()),
-            code => EchoStatus::Other(format!("Status code {code}")),
+            IP_GENERAL_FAILURE => EchoStatus::Other("Falha geral".into()),
+            code => EchoStatus::Other(format!("Código de status {code}")),
         }
     }
 

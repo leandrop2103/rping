@@ -1,77 +1,77 @@
-//! Command-line argument parsing and configuration.
+//! Análise de argumentos de linha de comando e configuração.
 
 use clap::Parser;
 
-/// Modern, high-performance ping utility with colored output and cross-platform support.
+/// Utilitário de ping moderno e de alto desempenho com saída colorida e suporte multiplataforma.
 #[derive(Parser, Debug, Clone)]
 #[command(
     name = "rping",
     author = "Leandro",
     version,
-    about = "High-performance cross-platform ping utility written in Rust",
-    long_about = "A modern reimplementation of iputils ping in Rust for Windows and Linux.\nFeatures zero-alloc hot path, unprivileged ICMP on Windows, colored output, and full statistics."
+    about = "Utilitário de ping multiplataforma de alto desempenho escrito em Rust",
+    long_about = "Reimplementação moderna do utilitário ping (iputils) em Rust para Windows e Linux.\nPossui hot-path sem alocações, ICMP não privilegiado no Windows, saída colorida e estatísticas completas."
 )]
 #[allow(clippy::struct_excessive_bools)]
 pub struct Cli {
-    /// Destination hostname or IP address to ping
-    #[arg(value_name = "DESTINATION")]
+    /// Nome de host ou endereço IP de destino para pingar
+    #[arg(value_name = "DESTINO")]
     pub destination: String,
 
-    /// Number of `ECHO_REQUEST` packets to send
-    #[arg(short = 'c', long = "count", value_name = "COUNT")]
+    /// Número de pacotes `ECHO_REQUEST` a enviar
+    #[arg(short = 'c', long = "count", value_name = "CONTAGEM")]
     pub count: Option<u64>,
 
-    /// Wait interval seconds between sending each packet
+    /// Intervalo de espera em segundos entre o envio de cada pacote
     #[arg(
         short = 'i',
         long = "interval",
         default_value_t = 1.0,
-        value_name = "SECONDS"
+        value_name = "SEGUNDOS"
     )]
     pub interval: f64,
 
-    /// Number of data payload bytes to send
+    /// Número de bytes de dados da carga útil (payload) a enviar
     #[arg(short = 's', long = "size", default_value_t = 56, value_name = "BYTES")]
     pub size: usize,
 
-    /// IP Time to Live (TTL) hop count (1-255)
+    /// Tempo de vida (TTL) do pacote IP em saltos (1-255)
     #[arg(short = 't', long = "ttl", default_value_t = 64, value_name = "TTL")]
     pub ttl: u8,
 
-    /// Time to wait for a response in seconds
+    /// Tempo limite de espera por resposta em segundos
     #[arg(
         short = 'W',
         long = "timeout",
         default_value_t = 1.0,
-        value_name = "SECONDS"
+        value_name = "SEGUNDOS"
     )]
     pub timeout: f64,
 
-    /// Exit after deadline seconds regardless of packet count
-    #[arg(short = 'w', long = "deadline", value_name = "SECONDS")]
+    /// Encerra após o tempo limite (deadline) em segundos, independentemente da contagem de pacotes
+    #[arg(short = 'w', long = "deadline", value_name = "SEGUNDOS")]
     pub deadline: Option<f64>,
 
-    /// Force IPv4 name resolution
+    /// Força resolução de nomes para IPv4
     #[arg(short = '4', long = "ipv4", conflicts_with = "ipv6")]
     pub ipv4: bool,
 
-    /// Force IPv6 name resolution
+    /// Força resolução de nomes para IPv6
     #[arg(short = '6', long = "ipv6", conflicts_with = "ipv4")]
     pub ipv6: bool,
 
-    /// Audible output (ring bell on reply)
+    /// Saída audível (emite sinal sonoro / beep a cada resposta recebida)
     #[arg(short = 'a', long = "audible")]
     pub audible: bool,
 
-    /// Quiet output; only display startup and final summary lines
+    /// Modo silencioso; exibe apenas o cabeçalho inicial e o resumo final
     #[arg(short = 'q', long = "quiet")]
     pub quiet: bool,
 
-    /// Verbose output showing diagnostic tracing
+    /// Modo detalhado com registros de diagnóstico estruturados
     #[arg(short = 'v', long = "verbose")]
     pub verbose: bool,
 
-    /// Disable colored output
+    /// Desativa a saída colorida no terminal
     #[arg(long = "no-color")]
     pub no_color: bool,
 }

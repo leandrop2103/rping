@@ -123,7 +123,7 @@ pub async fn run(cli: Cli) -> Result<()> {
             }
             Err(PingError::TtlExpired(from)) => {
                 printer
-                    .print_error_reply(Some(from), seq, "Time to live exceeded")
+                    .print_error_reply(Some(from), seq, "Tempo de vida (TTL) expirado no trânsito")
                     .map_err(PingError::Io)?;
             }
             Err(PingError::DestinationUnreachable(reason)) => {

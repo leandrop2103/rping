@@ -1,56 +1,56 @@
-//! Error types for the ping utility.
+//! Tipos de erro para o utilitário de ping.
 
 use std::net::IpAddr;
 use thiserror::Error;
 
-/// Core error type representing any failure during ping execution.
+/// Tipo de erro principal representando qualquer falha durante a execução do ping.
 #[derive(Debug, Error)]
 pub enum PingError {
-    /// DNS or host name resolution failed.
-    #[error("failed to resolve target '{0}': {1}")]
+    /// Resolução de DNS ou nome de host falhou.
+    #[error("falha ao resolver o destino '{0}': {1}")]
     HostResolutionFailed(String, String),
 
-    /// No valid IP address was found for the target.
-    #[error("no IP addresses found for target '{0}'")]
+    /// Nenhum endereço IP válido foi encontrado para o destino.
+    #[error("nenhum endereço IP encontrado para o destino '{0}'")]
     NoAddressFound(String),
 
-    /// Target address family does not match forced version (-4 or -6).
-    #[error("resolved address '{0}' does not match requested IP version")]
+    /// A família de endereços do destino não coincide com a versão forçada (-4 ou -6).
+    #[error("endereço resolvido '{0}' não corresponde à versão de IP solicitada")]
     AddressFamilyMismatch(IpAddr),
 
-    /// Failed to create the system ICMP handle or socket.
-    #[error("failed to create ICMP handle/socket: {0}")]
+    /// Falha ao criar o identificador/socket ICMP do sistema.
+    #[error("falha ao criar socket/identificador ICMP: {0}")]
     HandleCreationFailed(String),
 
-    /// Probe request timed out.
-    #[error("request timed out for icmp_seq {0}")]
+    /// Tempo limite de resposta da sonda esgotado.
+    #[error("tempo limite esgotado para icmp_seq {0}")]
     Timeout(u16),
 
-    /// Time to live exceeded in transit.
-    #[error("TTL expired in transit from {0}")]
+    /// Tempo de vida (TTL) expirado no trânsito.
+    #[error("tempo de vida (TTL) expirado no trânsito a partir de {0}")]
     TtlExpired(IpAddr),
 
-    /// Destination unreachable with specific cause.
-    #[error("destination unreachable: {0}")]
+    /// Destino inalcançável com causa específica.
+    #[error("destino inalcançável: {0}")]
     DestinationUnreachable(String),
 
-    /// Payload size exceeds allowable maximum.
-    #[error("payload size {requested} bytes exceeds maximum allowed ({max} bytes)")]
+    /// O tamanho da carga útil excede o máximo permitido.
+    #[error("tamanho da carga útil de {requested} bytes excede o máximo permitido ({max} bytes)")]
     PayloadTooLarge {
-        /// Requested payload size in bytes.
+        /// Tamanho solicitado da carga útil em bytes.
         requested: usize,
-        /// Maximum allowed payload size in bytes.
+        /// Tamanho máximo permitido da carga útil em bytes.
         max: usize,
     },
 
-    /// An underlying I/O error occurred.
-    #[error("I/O error: {0}")]
+    /// Ocorreu um erro de E/S subjacente.
+    #[error("erro de E/S: {0}")]
     Io(#[from] std::io::Error),
 
-    /// Operating system specific error.
-    #[error("OS error: {0}")]
+    /// Erro específico do sistema operacional.
+    #[error("erro do sistema operacional: {0}")]
     OsError(String),
 }
 
-/// Convenience type alias for Results returning [`PingError`].
+/// Apelido de conveniência para Results que retornam [`PingError`].
 pub type Result<T> = std::result::Result<T, PingError>;

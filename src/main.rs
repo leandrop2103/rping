@@ -24,7 +24,7 @@ async fn main() {
     let _ = tracing::subscriber::set_global_default(subscriber);
 
     if let Err(err) = rping::run(cli).await {
-        eprintln!("\x1b[1;31mrping error:\x1b[0m {err}");
+        eprintln!("\x1b[1;31merro no rping:\x1b[0m {err}");
         std::process::exit(1);
     }
 }
