@@ -53,7 +53,8 @@ impl Printer {
         let bytes_str = self.style.bold_cyan(&payload_bytes.to_string());
         let total_str = self.style.dim(&format!("({total_bytes})"));
 
-        let header = format!("{ping_label} {target_str} {ip_str} {bytes_str}{total_str} bytes de dados.");
+        let header =
+            format!("{ping_label} {target_str} {ip_str} {bytes_str}{total_str} bytes de dados.");
         writeln!(out, "{header}")?;
         out.flush()
     }
@@ -141,13 +142,16 @@ impl Printer {
         let header = format!("--- estatísticas de ping para {target_str} ---");
         writeln!(out, "\n{}", self.style.bold_cyan(&header))?;
 
-        let total_ms = summary.total_duration.as_millis();
+        let trans_str = self.style.color_transmitted(summary.transmitted);
+        let recv_str = self
+            .style
+            .color_received(summary.received, summary.transmitted);
         let loss_colored = self.style.color_loss(summary.packet_loss_percent);
+        let time_str = self.style.format_duration(summary.total_duration);
 
         writeln!(
             out,
-            "{} pacotes transmitidos, {} recebidos, {} de perda de pacotes, tempo total {}ms",
-            summary.transmitted, summary.received, loss_colored, total_ms
+            "{trans_str}, {recv_str}, {loss_colored} de perda de pacotes, tempo total {time_str}"
         )?;
 
         if let (Some(min), Some(avg), Some(max), Some(mdev)) = (

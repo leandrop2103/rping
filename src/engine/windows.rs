@@ -6,7 +6,7 @@
 use std::ffi::c_void;
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
 use std::ptr;
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use crate::engine::{EchoReply, EchoStatus, PingEngine};
 use crate::error::PingError;
@@ -205,6 +205,7 @@ impl WindowsPingEngine {
         // 1. `self.handle` is a verified valid handle created via `IcmpCreateFile`.
         // 2. `payload` is valid memory for `payload_len` bytes.
         // 3. `self.buffer` is sized >= sizeof(IcmpEchoReply) + payload_len + 256.
+        let start_time = Instant::now();
         let ret = unsafe {
             IcmpSendEcho(
                 self.handle,
@@ -217,6 +218,7 @@ impl WindowsPingEngine {
                 timeout_ms,
             )
         };
+        let rtt = start_time.elapsed();
 
         if ret == 0 {
             let last_error = unsafe { GetLastError() };
@@ -254,7 +256,6 @@ impl WindowsPingEngine {
         }
 
         let from_ip = Ipv4Addr::from(reply.address.to_ne_bytes());
-        let rtt = Duration::from_millis(u64::from(reply.round_trip_time));
 
         Ok(EchoReply {
             sequence: seq,
@@ -302,6 +303,7 @@ impl WindowsPingEngine {
         // 1. `self.handle` is valid and created via `Icmp6CreateFile`.
         // 2. `dest_addr` correctly sets `sin6_family = AF_INET6`.
         // 3. `self.buffer` satisfies the buffer size requirements.
+        let start_time = Instant::now();
         let ret = unsafe {
             Icmp6SendEcho2(
                 self.handle,
@@ -318,6 +320,7 @@ impl WindowsPingEngine {
                 timeout_ms,
             )
         };
+        let rtt = start_time.elapsed();
 
         if ret == 0 {
             let last_error = unsafe { GetLastError() };
@@ -354,7 +357,6 @@ impl WindowsPingEngine {
         }
 
         let from_ip = Ipv6Addr::from(reply.address.sin6_addr);
-        let rtt = Duration::from_millis(u64::from(reply.round_trip_time));
 
         Ok(EchoReply {
             sequence: seq,

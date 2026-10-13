@@ -147,6 +147,68 @@ impl Style {
         }
     }
 
+    /// Formata a contagem de pacotes transmitidos com destaque (ciano brilhante).
+    #[must_use]
+    pub fn color_transmitted(&self, count: u64) -> String {
+        if self.enabled {
+            format!("\x1b[1;36m{count} pacotes transmitidos\x1b[0m")
+        } else {
+            format!("{count} pacotes transmitidos")
+        }
+    }
+
+    /// Formata a contagem de pacotes recebidos com cor condicional de status.
+    #[must_use]
+    pub fn color_received(&self, received: u64, transmitted: u64) -> String {
+        if !self.enabled {
+            return format!("{received} recebidos");
+        }
+
+        if received == transmitted && transmitted > 0 {
+            format!("\x1b[1;32m{received} recebidos\x1b[0m")
+        } else if received > 0 {
+            format!("\x1b[1;33m{received} recebidos\x1b[0m")
+        } else {
+            format!("\x1b[1;31m{received} recebidos\x1b[0m")
+        }
+    }
+
+    /// Formata uma duração de tempo de forma legível em pt-BR:
+    /// - < 60s: em segundos com duas casas decimais, ex: "7.51s"
+    /// - >= 60s e < 3600s: "1m e 15s" (ou "1m" se segundos forem zero)
+    /// - >= 3600s: "1h, 4m e 3s"
+    #[must_use]
+    pub fn format_duration(&self, duration: std::time::Duration) -> String {
+        let total_secs = duration.as_secs();
+        let formatted = if total_secs < 60 {
+            format!("{:.2}s", duration.as_secs_f64())
+        } else if total_secs < 3600 {
+            let m = total_secs / 60;
+            let s = total_secs % 60;
+            if s == 0 {
+                format!("{m}m")
+            } else {
+                format!("{m}m e {s}s")
+            }
+        } else {
+            let h = total_secs / 3600;
+            let m = (total_secs % 3600) / 60;
+            let s = total_secs % 60;
+            match (m, s) {
+                (0, 0) => format!("{h}h"),
+                (0, _) => format!("{h}h e {s}s"),
+                (_, 0) => format!("{h}h e {m}m"),
+                (_, _) => format!("{h}h, {m}m e {s}s"),
+            }
+        };
+
+        if self.enabled {
+            format!("\x1b[1;35m{formatted}\x1b[0m")
+        } else {
+            formatted
+        }
+    }
+
     /// Applies color to a packet loss percentage:
     /// - Green: 0%
     /// - Yellow: 0.1% .. 20%
@@ -201,5 +263,53 @@ fn enable_windows_ansi() -> bool {
             return false;
         }
         SetConsoleMode(handle, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING) != 0
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[test]
+    fn test_format_duration_sub_minute() {
+        let style = Style { enabled: false };
+        assert_eq!(style.format_duration(Duration::from_millis(7510)), "7.51s");
+        assert_eq!(style.format_duration(Duration::from_millis(350)), "0.35s");
+    }
+
+    #[test]
+    fn test_format_duration_minutes() {
+        let style = Style { enabled: false };
+        assert_eq!(style.format_duration(Duration::from_secs(60)), "1m");
+        assert_eq!(style.format_duration(Duration::from_secs(75)), "1m e 15s");
+        assert_eq!(style.format_duration(Duration::from_secs(124)), "2m e 4s");
+    }
+
+    #[test]
+    fn test_format_duration_hours() {
+        let style = Style { enabled: false };
+        assert_eq!(style.format_duration(Duration::from_secs(3600)), "1h");
+        assert_eq!(style.format_duration(Duration::from_secs(3605)), "1h e 5s");
+        assert_eq!(style.format_duration(Duration::from_mins(61)), "1h e 1m");
+        assert_eq!(
+            style.format_duration(Duration::from_secs(3843)),
+            "1h, 4m e 3s"
+        );
+    }
+
+    #[test]
+    fn test_color_transmitted_and_received() {
+        let style = Style { enabled: false };
+        assert_eq!(style.color_transmitted(8), "8 pacotes transmitidos");
+        assert_eq!(style.color_received(8, 8), "8 recebidos");
+
+        let style_colored = Style { enabled: true };
+        assert!(style_colored
+            .color_transmitted(8)
+            .contains("8 pacotes transmitidos"));
+        assert!(style_colored.color_received(8, 8).contains("\x1b[1;32m"));
+        assert!(style_colored.color_received(4, 8).contains("\x1b[1;33m"));
+        assert!(style_colored.color_received(0, 8).contains("\x1b[1;31m"));
     }
 }
