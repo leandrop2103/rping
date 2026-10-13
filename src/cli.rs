@@ -18,7 +18,12 @@ pub struct Cli {
     pub destination: String,
 
     /// Número de pacotes `ECHO_REQUEST` a enviar
-    #[arg(short = 'c', long = "count", value_name = "CONTAGEM")]
+    #[arg(
+        short = 'c',
+        short_alias = 'n',
+        long = "count",
+        value_name = "CONTAGEM"
+    )]
     pub count: Option<u64>,
 
     /// Intervalo de espera em segundos entre o envio de cada pacote
@@ -31,7 +36,13 @@ pub struct Cli {
     pub interval: f64,
 
     /// Número de bytes de dados da carga útil (payload) a enviar
-    #[arg(short = 's', long = "size", default_value_t = 56, value_name = "BYTES")]
+    #[arg(
+        short = 's',
+        short_alias = 'l',
+        long = "size",
+        default_value_t = 56,
+        value_name = "BYTES"
+    )]
     pub size: usize,
 
     /// Tempo de vida (TTL) do pacote IP em saltos (1-255)
@@ -152,5 +163,12 @@ mod tests {
         let cli_long_th = Cli::parse_from_args(["rping", "--th", "1.1.1.1"]);
         assert!(cli_long_th.timestamp_human);
         assert_eq!(cli_long_th.timestamp_mode(), TimestampMode::Human);
+    }
+
+    #[test]
+    fn test_windows_flag_aliases() {
+        let cli = Cli::parse_from_args(["rping", "-n", "4", "-l", "128", "1.1.1.1"]);
+        assert_eq!(cli.count, Some(4));
+        assert_eq!(cli.size, 128);
     }
 }
