@@ -40,7 +40,23 @@ Projetado especificamente para rodar nativamente e com máxima performance no **
 
 ---
 
-## 📦 Compilação e Salvamento na Raiz
+## 📦 Instalação
+
+### Via Windows Package Manager (winget)
+
+```powershell
+winget install leandrop2103.rping
+```
+
+> O winget baixa automaticamente o binário standalone e o vincula ao seu PATH do Windows (`rping`). Fica disponível imediatamente em qualquer terminal (PowerShell, CMD, Windows Terminal)!
+
+### Via Download Manual (.zip ou .exe)
+1. Baixe o pacote na [página de Releases](https://github.com/leandrop2103/rping/releases).
+2. Extraia e execute `instalar.cmd` (para instalar com auto-elevação UAC em `C:\Windows`) ou copie o `rping.exe` para qualquer pasta no seu PATH.
+
+---
+
+## 🛠️ Compilação e Salvamento na Raiz
 
 Para compilar e salvar os binários executáveis (`rping.exe` e `ping.exe`) diretamente na **pasta raiz**:
 
