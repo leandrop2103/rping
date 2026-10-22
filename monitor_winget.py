@@ -36,6 +36,20 @@ BLUE = "\033[1;34m"
 def now_str() -> str:
     return datetime.datetime.now().strftime("%d/%m-%H:%M:%S")
 
+def format_interval_text(seconds: int) -> str:
+    """Formata o intervalo de forma legível em minutos ou segundos."""
+    if seconds >= 3600 and seconds % 3600 == 0:
+        h = seconds // 3600
+        return f"{h} hora{'s' if h != 1 else ''}"
+    if seconds >= 60 and seconds % 60 == 0:
+        m = seconds // 60
+        return f"{m} minuto{'s' if m != 1 else ''}"
+    if seconds >= 60:
+        m = seconds // 60
+        s = seconds % 60
+        return f"{m}m e {s}s"
+    return f"{seconds} segundos"
+
 def send_windows_toast(title: str, message: str) -> None:
     """Envia uma notificação Toast nativa no Windows usando PowerShell/WinRT."""
     if os.name != "nt":
@@ -118,12 +132,13 @@ def format_status(status: str, conclusion: str) -> str:
     return f"{DIM}{status_u} / {conc_u}{RESET}"
 
 def run_monitor(pr_number: int, repo: str, interval: int, enable_toast: bool, enable_sound: bool):
+    interval_desc = format_interval_text(interval)
     print(f"{CYAN}{BOLD}========================================================================{RESET}")
     print(f"{CYAN}{BOLD}       MONITOR DA ESTEIRA WINGET (microsoft/winget-pkgs)               {RESET}")
     print(f"{CYAN}{BOLD}========================================================================{RESET}")
     print(f"{BOLD}Repositório:{RESET} {repo}")
     print(f"{BOLD}Pull Request:{RESET} #{pr_number}")
-    print(f"{BOLD}Intervalo de Checagem:{RESET} a cada {interval} segundos")
+    print(f"{BOLD}Intervalo de Checagem:{RESET} a cada {interval_desc}")
     print(f"{BOLD}Notificações do Windows (Toast):{RESET} {'Ativadas' if enable_toast else 'Desativadas'}")
     print(f"{BOLD}Alertas Sonoros:{RESET} {'Ativados' if enable_sound else 'Desativados'}")
     print(f"{DIM}Iniciado em: {now_str()} | Pressione Ctrl+C para encerrar{RESET}\n")
@@ -237,33 +252,43 @@ def run_monitor(pr_number: int, repo: str, interval: int, enable_toast: bool, en
             for c in relevant_checks:
                 status_str = format_status(c["status"], c["conclusion"])
                 print(f"  • {BOLD}{c['name']:<25}{RESET} -> {status_str}")
-            print(f"{DIM}Aguardando {interval}s para próxima checagem...{RESET}\n")
-        else:
-            # Indicador de atividade na mesma linha
-            sys.stdout.write(f"\r[{timestamp}] Ciclo #{cycle} | Estado: {state} | Checks: {len(current_checks)} | Aguardando {interval}s... ")
-            sys.stdout.flush()
+            print(f"{DIM}Aguardando {interval_desc} para a próxima checagem...{RESET}\n")
 
         prev_state = state
         prev_checks = current_checks
         prev_comment_count = len(comments)
 
-        time.sleep(interval)
+        # Contagem regressiva em tempo real no terminal
+        for remaining in range(interval, 0, -1):
+            rem_m = remaining // 60
+            rem_s = remaining % 60
+            sys.stdout.write(
+                f"\r[{now_str()}] Ciclo #{cycle} | Estado: {state} | "
+                f"Próxima checagem em: {rem_m:02d}m {rem_s:02d}s...   "
+            )
+            sys.stdout.flush()
+            time.sleep(1)
+        sys.stdout.write("\r" + " " * 80 + "\r")
+        sys.stdout.flush()
 
 def main():
     parser = argparse.ArgumentParser(description="Monitor em tempo real da esteira WinGet da Microsoft")
     parser.add_argument("--pr", type=int, default=459533, help="Número da Pull Request (padrão: 459533)")
     parser.add_argument("--repo", type=str, default="microsoft/winget-pkgs", help="Repositório da PR")
-    parser.add_argument("--interval", type=int, default=30, help="Intervalo em segundos entre verificações (padrão: 30)")
+    parser.add_argument("--minutes", type=float, default=30.0, help="Intervalo em minutos entre verificações (padrão: 30)")
+    parser.add_argument("--interval", type=int, default=None, help="Intervalo em segundos (se especificado, sobrepõe --minutes)")
     parser.add_argument("--no-toast", action="store_true", help="Desativa notificações Toast do Windows")
     parser.add_argument("--no-sound", action="store_true", help="Desativa alertas sonoros")
 
     args = parser.parse_args()
 
+    interval_seconds = args.interval if args.interval is not None else int(args.minutes * 60)
+
     try:
         run_monitor(
             pr_number=args.pr,
             repo=args.repo,
-            interval=args.interval,
+            interval=interval_seconds,
             enable_toast=not args.no_toast,
             enable_sound=not args.no_sound,
         )
