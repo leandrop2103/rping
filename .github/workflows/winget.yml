@@ -1,0 +1,34 @@
+name: WinGet Package Publisher
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  publish-winget:
+    name: Publish to Windows Package Manager (winget-pkgs)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install WingetCreate
+        run: |
+          winget install Microsoft.WingetCreate --accept-source-agreements --accept-package-agreements
+
+      - name: Submit to microsoft/winget-pkgs
+        env:
+          GITHUB_TOKEN: ${{ secrets.WINGET_TOKEN || secrets.GITHUB_TOKEN }}
+        run: |
+          $tag = "${{ github.event.release.tag_name }}"
+          if (-not $tag) {
+              $tag = "v0.1.0"
+          }
+          $version = $tag.TrimStart("v")
+          $url = "https://github.com/leandrop2103/rping/releases/download/$tag/rping.exe"
+          Write-Host "Atualizando manifesto para a versao $version ($url)..."
+          wingetcreate update leandrop2103.rping --version $version --urls $url --submit --token $env:GITHUB_TOKEN
