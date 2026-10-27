@@ -99,7 +99,7 @@ impl Style {
     #[must_use]
     pub fn color_bytes(&self, bytes: usize) -> String {
         if self.enabled {
-            format!("\x1b[1;36m{bytes} bytes\x1b[0m")
+            format!("\x1b[1;36m{bytes}\x1b[0m bytes")
         } else {
             format!("{bytes} bytes")
         }
@@ -119,7 +119,7 @@ impl Style {
     #[must_use]
     pub fn color_seq(&self, seq: u16) -> String {
         if self.enabled {
-            format!("\x1b[34micmp_seq=\x1b[1;34m{seq}\x1b[0m")
+            format!("icmp_seq=\x1b[1;34m{seq}\x1b[0m")
         } else {
             format!("icmp_seq={seq}")
         }
@@ -129,7 +129,7 @@ impl Style {
     #[must_use]
     pub fn color_ttl(&self, ttl: u8) -> String {
         if self.enabled {
-            format!("\x1b[33mttl=\x1b[1;33m{ttl}\x1b[0m")
+            format!("ttl=\x1b[1;33m{ttl}\x1b[0m")
         } else {
             format!("ttl={ttl}")
         }
